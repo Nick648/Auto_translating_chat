@@ -15,7 +15,7 @@ def output_dict(dic, name):
 
 def display_all_lang_translate():
     count_lang = 1
-    print(f'\n\tПеревод фразы: "Привет! Как дела?" на все возможные языки.')
+    print(f'\n\tПеревод фразы: "Привет! Как дела?" на все доступные языки.')
     print(f'\nЯзыки: \n\tКоличество языков = {len(LANGUAGES)}\n')
     for key, value in LANGUAGES.items():
         ans = text_translator(text='Привет! Как дела?', src='ru', dest=key)
