@@ -1,44 +1,20 @@
 from googletrans import Translator
 from pynput import keyboard
-from pynput.keyboard import Key, Listener, Controller
+from pynput.keyboard import Key, KeyCode, Listener, Controller
 import ctypes
 import pyperclip
 import keyboard as kb
+import time
+from key_lay_dict import KEY_LAY_DICT
 
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 
-KEYBOARD_LAYOUT = '''
-qwertyuiop[]asdfghjkl;'zxcvbnm,./`1234567890-=
-QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~!@#$%^&*()_+
-йцукенгшщзхъфывапролджэячсмитьбю.ё1234567890-=
-ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,Ё!"№;%:?*()_+
-'''.strip().split('\n')
-
-KEY_LAY_DICT = dict()
-for en_line in range(2):
-    for symbol in range(len(KEYBOARD_LAYOUT[en_line])):
-        KEY_LAY_DICT[KEYBOARD_LAYOUT[en_line][symbol]] = KEYBOARD_LAYOUT[en_line + 2][symbol]
-
-'''
-KEY_LAY_DICT = {
-    'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
-    'a': 'ф', 's': 'ы', 'd': 'в', 'f': 'а', 'g': 'п', 'h': 'р', 'j': 'о', 'k': 'л', 'l': 'д', ';': 'ж', "'": 'э', 
-    'z': 'я', 'x': 'ч', 'c': 'с', 'v': 'м', 'b': 'и', 'n': 'т', 'm': 'ь', ',': 'б', '.': 'ю', '/': '.', 
-    '`': 'ё', 
-    '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '0': '0', '-': '-', '=': '=', 
-    
-    'Q': 'Й', 'W': 'Ц', 'E': 'У', 'R': 'К', 'T': 'Е', 'Y': 'Н', 'U': 'Г', 'I': 'Ш', 'O': 'Щ', 'P': 'З', '{': 'Х', '}': 'Ъ', 
-    'A': 'Ф', 'S': 'Ы', 'D': 'В', 'F': 'А', 'G': 'П', 'H': 'Р', 'J': 'О', 'K': 'Л', 'L': 'Д', ':': 'Ж', '"': 'Э', 
-    'Z': 'Я', 'X': 'Ч', 'C': 'С', 'V': 'М', 'B': 'И', 'N': 'Т', 'M': 'Ь', '<': 'Б', '>': 'Ю', '?': ',', 
-    '~': 'Ё', 
-    '!': '!', '@': '"', '#': '№', '$': ';', '%': '%', '^': ':', '&': '?', '*': '*', '(': '(', ')': ')', '_': '_', '+': '+'
-}
-'''
 
 words = ''
+past_key = ''
 
 
-def get_keyboard_language():
+def get_keyboard_language() -> str:
     """
     Gets the keyboard language in use by the current
     active window process.
@@ -63,7 +39,7 @@ def get_keyboard_language():
     return str(language_id_hex)
 
 
-def is_rus():
+def is_rus() -> bool:
     lang_id = get_keyboard_language()  # 0x409 -> en; 0x419 -> ru
     if lang_id == '0x419':
         return True
@@ -71,14 +47,19 @@ def is_rus():
         return False
 
 
-def display_info(key):
+def display_info(key) -> None:
+    try:
+        print(f'{key}:{key.char} pressed; {type(key)}:{type(key.char)}')
+    except AttributeError:
+        print(f'special key {key} pressed; {type(key)}')
+
     print(f"\n\tKey: {key}"
           f"\n\tType: {type(key)}: {type(type(key))}"
           f"\n\tName: {type(key).__name__}: {type(type(key).__name__)}"
           f"\n\twas raised: {key}\n")
 
 
-def text_translator(text='Hello friend', src='en', dest='ru'):
+def text_translator(text='Hello friend', src='en', dest='ru') -> str:
     try:
         translator = Translator()
         translation = translator.translate(text=text, src=src, dest=dest)
@@ -86,9 +67,6 @@ def text_translator(text='Hello friend', src='en', dest='ru'):
     except Exception as ex:
         print(f'\tError:\tName: {type(ex).__name__}\tType: {type(ex)} was raised: {ex}')
         return 'ERROR!'
-
-
-past_key = ''
 
 
 def on_press(key):
@@ -101,7 +79,7 @@ def on_press(key):
             else:
                 words += key.char
         except Exception as ex:
-            print('\t', type(ex).__name__, type(ex), ex)
+            print('\tError on_press:', type(ex).__name__, type(ex), ex)
 
     if key == Key.backspace:  # and type(key).__name__ == 'Key'
         words = words[:-1]
@@ -109,23 +87,23 @@ def on_press(key):
         words += ' '
     if key == Key.enter:
         words += '\n'
+        ctypes.windll.user32.BlockInput(True)
+        time.sleep(3)
+        ctypes.windll.user32.BlockInput(False)
     past_key = key
 
     # display_info(key)
 
-    # try:
-    #     print(f'{key}:{key.char} pressed; {type(key)}:{type(key.char)}')
-    # except AttributeError:
-    #     print(f'special key {key} pressed')
-
 
 def on_release(key):
     global words
+    print(f'{words=}')
     # print(f'{key} release; {type(key)}')
     if key == Key.esc:
         print(f'\tWords: \n{words};')
         # Stop listener
-        return False
+        # return False
+        exit()
     if key == Key.space:
         ans = text_translator(text=words, src='ru', dest='en') + ' '
         print(f'\tWords: {words}\n\tAnswer: {ans}')

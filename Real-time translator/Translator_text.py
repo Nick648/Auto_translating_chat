@@ -1,19 +1,21 @@
 from googletrans import Translator, LANGCODES, LANGUAGES
-from pynput.keyboard import Key, Listener
+from pynput.keyboard import Key, KeyCode, Listener
 
 
-def display_info_module(module):
+def display_info_module(module) -> None:
     print(help(module))
+    output_dict(LANGUAGES, 'LANGUAGES')
+    output_dict(LANGCODES, 'LANGCODES')
 
 
-def output_dict(dic, name):
+def output_dict(dic: dict, name: str) -> None:
     print(f'\n{name}:')
     print(f'{name}: {type(dic)}, {len(dic)}, dict = {dic}')
     for key, value in dic.items():
         print(f'\t{key}: {value}')
 
 
-def display_all_lang_translate():
+def display_all_lang_translate() -> None:
     count_lang = 1
     print(f'\n\tПеревод фразы: "Привет! Как дела?" на все доступные языки.')
     print(f'\nЯзыки: \n\tКоличество языков = {len(LANGUAGES)}\n')
@@ -23,13 +25,13 @@ def display_all_lang_translate():
         count_lang += 1
 
 
-def lang_detect():
+def lang_detect() -> None:
     from langdetect import detect, detect_langs
     lang = detect("привет")
     print(lang)
 
 
-def text_translator(text='Hello friend', src='en', dest='ru'):
+def text_translator(text: str = 'Hello friend', src: str = 'en', dest: str = 'ru') -> str:
     try:
         translator = Translator()
         translation = translator.translate(text=text, src=src, dest=dest)
@@ -39,15 +41,15 @@ def text_translator(text='Hello friend', src='en', dest='ru'):
         return 'ERROR!'
 
 
-def main():
-    print(f'\n>>> ', end='')
-    print(text_translator(text='Hello', src='en', dest='fr'))
+def test_translator() -> None:
+    print('\n>>>', text_translator())
+    print('\n>>>', text_translator(text='Hello', src='en', dest='fr'))
 
 
 def listen_keyboard():  # В этом блоке будет работать слушатель событий.
     global words
 
-    def display_info(key):
+    def display_info(key) -> None:
         print(f"\n\tKey: {key}"
               f"\n\tType: {type(key)}"
               f"\n\tName: {type(key).__name__}: {type(type(key).__name__)}"
@@ -58,11 +60,13 @@ def listen_keyboard():  # В этом блоке будет работать с�
 
         if type(key).__name__ == 'KeyCode':
             words += key.char
+        if type(key).__name__ == 'Key' and key == Key.space:
+            words += ' '
         if type(key).__name__ == 'Key' and key == Key.backspace:
             words = words[:-1]
             print(words)
 
-        # display_info(key)
+        display_info(key)
 
         try:
             print(f'{key}:{key.char} pressed; {type(key)}:{type(key.char)}')
@@ -73,11 +77,15 @@ def listen_keyboard():  # В этом блоке будет работать с�
         # print(f'{key} release; {type(key)}')
         if key == Key.esc:
             # Stop listener
-            return False
+            # return False
+            exit()
 
         if key == Key.space:
             ans = text_translator(text=words, src='ru', dest='en')
-            print(f'Word: {words}\n\tAnswer: {ans}')
+            if ans == 'ERROR!':
+                print(f'Word: {words}\tAnswer: {words}')
+            else:
+                print(f'Word: {words}\tAnswer: {ans}')
 
     # Collect events until released
     with Listener(
@@ -88,9 +96,7 @@ def listen_keyboard():  # В этом блоке будет работать с�
 
 if __name__ == '__main__':
     words = ''
+    listen_keyboard()
     # display_info_module(googletrans)
-    # output_dict(LANGUAGES, 'LANGUAGES')
-    # output_dict(LANGCODES, 'LANGCODES')
-    display_all_lang_translate()
-    # listen_keyboard()
-    # main()
+    # display_all_lang_translate()
+    # test_translator()
